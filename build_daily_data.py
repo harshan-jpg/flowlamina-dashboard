@@ -160,7 +160,7 @@ def main():
         hrs = prop(p.get("Time")) or 0
         days[d]["hours"] += hrs
         days[d]["worked"] += hrs   # total logged hours (Time Log is now the single input DB)
-        days[d]["sales_calls"] += (prop(p.get("Sales Calls/Approaches")) or 0)  # on the "daily totals" rows
+        days[d]["sales_calls"] += (prop(p.get("Sales Calls/Meetings")) or 0)  # renamed 2026-07-08; on the daily-totals rows
         rel = (p.get("Project") or {}).get("relation") or []
         name = proj_name.get(rel[0]["id"].replace("-", ""), "Unattributed") if rel else "Unattributed"
         if hrs:
