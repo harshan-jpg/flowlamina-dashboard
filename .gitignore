@@ -1,0 +1,7 @@
+# NEVER publish the plaintext dashboard data or the un-encrypted HTML.
+# Only the StatiCrypt-encrypted index.html (repo root) is ever committed.
+data/
+dist/
+__pycache__/
+*.pyc
+.env
