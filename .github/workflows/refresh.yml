@@ -1,0 +1,71 @@
+name: Refresh dashboard
+
+# Auto-rebuilds the encrypted CRM dashboard from Notion + Instantly every morning,
+# so the hosted page is always current without anyone running deploy.sh locally.
+#
+# Cron is UTC. 19:00 UTC = 5:00am AEST (Sydney, winter, UTC+10). During AEDT
+# (daylight saving, UTC+11) this fires at 6:00am — GitHub cron has no timezone.
+# Secrets (repo Settings -> Secrets and variables -> Actions):
+#   NOTION_TOKEN, INSTANTLY_KEY, DASH_PASSWORD
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch: {}   # allow manual "Run workflow" from the Actions tab
+
+# NOTE: Upwork proposal freshness still needs a local `/upwork-sync` — the Upwork
+# session token can't run unattended. This job refreshes everything else.
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # lets the built-in GITHUB_TOKEN push the new index.html
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build data + render dashboard
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          INSTANTLY_KEY: ${{ secrets.INSTANTLY_KEY }}
+        run: |
+          python build_daily_data.py
+          python build_dashboard.py
+
+      - name: Encrypt (StatiCrypt) -> index.html
+        env:
+          DASH_PASSWORD: ${{ secrets.DASH_PASSWORD }}
+        run: |
+          npx -y staticrypt dist/index.html -p "$DASH_PASSWORD" \
+            --template-title "Flowlamina Dashboard" \
+            --template-instructions "Private business dashboard — enter the password." \
+            --template-color-primary "#f0932b" \
+            -d .
+
+      - name: Inject no-cache meta
+        run: |
+          python - <<'PY'
+          p = "index.html"
+          h = open(p, encoding="utf-8").read()
+          meta = ('<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">'
+                  '<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">')
+          if "no-store" not in h and "<head>" in h:
+              open(p, "w", encoding="utf-8").write(h.replace("<head>", "<head>" + meta, 1))
+              print("injected no-cache meta")
+          PY
+
+      - name: Commit + push refreshed dashboard
+        run: |
+          git config user.name "flowlamina-bot"
+          git config user.email "bot@flowlamina.com"
+          # Commit ONLY the encrypted page + the script copies — never data/ or dist/.
+          git add index.html build_daily_data.py build_dashboard.py
+          git commit -m "Auto-refresh dashboard $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
+          git push
