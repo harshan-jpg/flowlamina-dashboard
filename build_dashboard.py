@@ -94,6 +94,9 @@ TEMPLATE = r"""<!doctype html>
   <header>
     <h1><span class="fl">Flowlamina</span> — Business Dashboard</h1>
     <div class="sub" id="asof"></div>
+    <button id="refreshBtn" onclick="location.reload()"
+      title="Reload the latest data (the dashboard auto-refreshes from the CRM every 15 minutes)"
+      style="position:fixed;top:14px;right:16px;z-index:1000;padding:8px 15px;border-radius:9px;border:none;background:#f0932b;color:#fff;font-weight:600;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18)">🔄 Refresh</button>
   </header>
 
   <div class="controls">

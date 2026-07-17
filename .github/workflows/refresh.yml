@@ -9,8 +9,8 @@ name: Refresh dashboard
 #   NOTION_TOKEN, INSTANTLY_KEY, DASH_PASSWORD
 on:
   schedule:
-    - cron: "0 19 * * *"
-  workflow_dispatch: {}   # allow manual "Run workflow" from the Actions tab
+    - cron: "*/15 * * * *"   # every 15 min → near-live sync (public repo = free unlimited minutes)
+  workflow_dispatch: {}      # allow manual "Run workflow" from the Actions tab
 
 # NOTE: Upwork proposal freshness still needs a local `/upwork-sync` — the Upwork
 # session token can't run unattended. This job refreshes everything else.
@@ -49,6 +49,7 @@ jobs:
           DASH_PASSWORD: ${{ secrets.DASH_PASSWORD }}
         run: |
           npx -y staticrypt dist/index.html -p "$DASH_PASSWORD" \
+            --remember 30 \
             --template-title "Flowlamina Dashboard" \
             --template-instructions "Private business dashboard — enter the password." \
             --template-color-primary "#f0932b" \
@@ -66,11 +67,18 @@ jobs:
               print("injected no-cache meta")
           PY
 
-      - name: Commit + push refreshed dashboard
+      - name: Commit + push only when CRM data changed
         run: |
+          # StatiCrypt re-encrypts with a random IV every run, so index.html always
+          # differs — that would mean a commit every 15 min. Gate on a hash of the
+          # PLAINTEXT data instead, so we only republish when the CRM actually changed.
+          NEW=$(sha256sum data/daily_stats.json | cut -d' ' -f1)
+          OLD=$(cat .datahash 2>/dev/null || echo none)
+          if [ "$NEW" = "$OLD" ]; then echo "CRM data unchanged — skipping commit"; exit 0; fi
+          echo "$NEW" > .datahash
           git config user.name "flowlamina-bot"
           git config user.email "bot@flowlamina.com"
-          # Commit ONLY the encrypted page + the script copies — never data/ or dist/.
-          git add index.html build_daily_data.py build_dashboard.py
+          # Commit ONLY the encrypted page + hash + script copies — never data/ or dist/.
+          git add index.html .datahash build_daily_data.py build_dashboard.py link_days.py
           git commit -m "Auto-refresh dashboard $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
           git push
