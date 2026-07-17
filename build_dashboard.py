@@ -151,7 +151,8 @@ TEMPLATE = r"""<!doctype html>
     <div class="chart"><h3>Hours worked over time</h3><div class="cv"><canvas id="c_worked"></canvas></div></div>
   </div>
 
-  <h2 class="fin">Finance (business)</h2>
+  <h2 class="fin">Finance (business) — AUD</h2>
+  <div class="sub" style="margin:-6px 0 10px">All figures are AUD (from your business bank statements). The only USD figure on this dashboard is Upwork <b>Connect cost</b> (US$0.15/connect).</div>
   <div class="cards" id="cards_fin"></div>
   <div class="grid">
     <div class="chart" style="grid-column:1/-1"><h3>Revenue vs Expenses</h3><div class="cv"><canvas id="c_finance"></canvas></div></div>
@@ -261,12 +262,12 @@ function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=la
 const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0}];
 const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
-  {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Connects spent',k:'connects',d:0},{lab:'Connect cost',k:'connect_cost',d:0,pre:'$'}];
+  {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Connects spent',k:'connects',d:0},{lab:'Connect cost (USD)',k:'connect_cost',d:0,pre:'US$'}];
 const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate',d:2,suf:'%'},
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:'Revenue',k:'revenue',d:0,pre:'$'},{lab:'Expenses',k:'expenses',d:0,pre:'$'},{lab:'Net',k:'net',d:0,pre:'$'}];
+const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){
@@ -284,11 +285,11 @@ function renderCards(elId,kpis,cur,prev){
 const GROUPS=[
   {label:'', cols:[['Period','_label']]},
   {label:'Upwork', cls:'grp-up', cols:[['Apps','applications'],['View %','view_rate'],['Reply %','uw_reply_rate'],
-    ['Won','won_upwork'],['Connects','connects'],['Cost $','connect_cost']]},
+    ['Won','won_upwork'],['Connects','connects'],['Cost US$','connect_cost']]},
   {label:'Cold email', cls:'grp-ce', cols:[['Won','won_coldemail'],['Emails','emails'],['Reply %','reply_rate'],
     ['Positive','positive']]},
   {label:'Other', cls:'grp-ot', cols:[['Won','won_other'],['Calls','sales_calls']]},
-  {label:'Finance', cls:'grp-fin', cols:[['Rev $','revenue'],['Exp $','expenses']]},
+  {label:'Finance', cls:'grp-fin', cols:[['Rev A$','revenue'],['Exp A$','expenses']]},
   {label:'', cols:[['Hours Logged','hours'],['Hours Worked','worked']]},
 ];
 const FLAT=GROUPS.flatMap(g=>g.cols);
