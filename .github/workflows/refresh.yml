@@ -49,6 +49,7 @@ jobs:
           DASH_PASSWORD: ${{ secrets.DASH_PASSWORD }}
         run: |
           npx -y staticrypt dist/index.html -p "$DASH_PASSWORD" \
+            --short \
             --remember 30 \
             --template-title "Flowlamina Dashboard" \
             --template-instructions "Private business dashboard — enter the password." \
