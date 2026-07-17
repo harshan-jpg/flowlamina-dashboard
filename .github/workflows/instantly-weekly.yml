@@ -1,0 +1,24 @@
+name: Instantly weekly sync
+
+# Writes the previous week's Instantly analytics as an aggregate row into the
+# Cold Email Notion DB. Runs in the cloud (GitHub's servers) so it no longer
+# depends on Harshan's laptop being on. Replaces the retired launchd job
+# com.flowlamina.instantly-weekly-sync (Sun 6am Sydney).
+on:
+  schedule:
+    - cron: "0 20 * * 6"   # Sat 20:00 UTC = Sun 6:00am AEST (drifts to 7am under AEDT)
+  workflow_dispatch: {}    # allow manual "Run workflow"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sync previous week's Instantly analytics into Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          INSTANTLY_KEY: ${{ secrets.INSTANTLY_KEY }}
+        run: python sync_instantly_weekly.py
