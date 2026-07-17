@@ -157,7 +157,7 @@ def main():
         if not d:
             continue
         d = d[:10]
-        hrs = prop(p.get("Session hrs")) or 0   # 'Time' is now a formula (session-or-total); the raw number is 'Session hrs'
+        hrs = prop(p.get("Time")) or 0   # flat model (2026-07-17): Time is a plain number again, one row per activity
         days[d]["hours"] += hrs
         days[d]["worked"] += hrs   # total logged hours (Time Log is now the single input DB)
         days[d]["sales_calls"] += (prop(p.get("Sales Calls/Meetings")) or 0)  # renamed 2026-07-08; on the daily-totals rows
