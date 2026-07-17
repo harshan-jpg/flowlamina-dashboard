@@ -31,6 +31,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Auto-link work rows to their day (feeds Total Time rollup)
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python link_days.py
+
       - name: Build data + render dashboard
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
