@@ -50,7 +50,7 @@ jobs:
         run: |
           npx -y staticrypt dist/index.html -p "$DASH_PASSWORD" \
             --short \
-            --remember 30 \
+            --remember 36500 \
             --template-title "Flowlamina Dashboard" \
             --template-instructions "Private business dashboard — enter the password." \
             --template-color-primary "#f0932b" \
