@@ -260,7 +260,7 @@ function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=la
 
 // ---- KPI cards ----
 const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0}];
-const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
+const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'Viewed',k:'viewed',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
   {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Connects spent',k:'connects',d:0},{lab:'Connect cost (USD)',k:'connect_cost',d:0,pre:'US$'}];
 const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate',d:2,suf:'%'},
@@ -284,7 +284,7 @@ function renderCards(elId,kpis,cur,prev){
 // ---- table ----
 const GROUPS=[
   {label:'', cols:[['Period','_label']]},
-  {label:'Upwork', cls:'grp-up', cols:[['Apps','applications'],['View %','view_rate'],['Reply %','uw_reply_rate'],
+  {label:'Upwork', cls:'grp-up', cols:[['Apps','applications'],['Viewed','viewed'],['View %','view_rate'],['Reply %','uw_reply_rate'],
     ['Won','won_upwork'],['Connects','connects'],['Cost US$','connect_cost']]},
   {label:'Cold email', cls:'grp-ce', cols:[['Won','won_coldemail'],['Emails','emails'],['Reply %','reply_rate'],
     ['Positive','positive']]},
