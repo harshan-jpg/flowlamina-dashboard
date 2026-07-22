@@ -6,8 +6,9 @@ feeds that row's `Total Time` rollup (the per-date summary). /log-day sets this 
 rows it creates; this script catches rows added manually in Notion. It runs in the
 5am GitHub Actions refresh so manual entries roll up by the next morning.
 
-Idempotent: only touches work rows that have a Date but no Day link. Creates a
-daily-totals row for any date that has work but none yet.
+Idempotent: links work rows that have a Date but no Day link, and RE-links rows
+whose Day points at a different date's daily row (i.e. the Date was edited after
+linking). Creates a daily-totals row for any date that has work but none yet.
 """
 import json, os, urllib.request, urllib.error, time
 
@@ -79,15 +80,13 @@ def main():
                            "Person": {"select": {"name": "Harshan"}}}})
         return r["id"] if r else None
 
-    linked = created = 0
+    linked = created = relinked = 0
     for p in rows:
         P = p["properties"]
         if title(P) == "📊 Daily totals":
             continue
         d = dget(P)
         if not d:
-            continue
-        if (P.get("Day") or {}).get("relation"):     # already linked
             continue
         d = d[:10]
         pid = totals.get(d)
@@ -96,11 +95,19 @@ def main():
             if not pid:
                 continue
             totals[d] = pid; created += 1; time.sleep(0.34)
+        cur_rel = [r["id"] for r in ((P.get("Day") or {}).get("relation") or [])]
+        if cur_rel == [pid]:
+            continue                                 # already correctly linked
+        # unlinked, OR linked to another date's daily row (Date edited later)
         if call("PATCH", f"https://api.notion.com/v1/pages/{p['id']}",
                 {"properties": {"Day": {"relation": [{"id": pid}]}}}):
-            linked += 1
+            if cur_rel:
+                relinked += 1
+            else:
+                linked += 1
         time.sleep(0.34)
-    print(f"link_days: linked {linked} rows, created {created} daily-totals rows")
+    print(f"link_days: linked {linked} rows, re-linked {relinked} date-moved rows, "
+          f"created {created} daily-totals rows")
 
 
 if __name__ == "__main__":
