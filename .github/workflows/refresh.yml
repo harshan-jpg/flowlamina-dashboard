@@ -31,11 +31,6 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Auto-link work rows to their day (feeds Total Time rollup)
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python link_days.py
-
       - name: Build data + render dashboard
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
@@ -80,6 +75,6 @@ jobs:
           git config user.name "flowlamina-bot"
           git config user.email "bot@flowlamina.com"
           # Commit ONLY the encrypted page + hash + script copies — never data/ or dist/.
-          git add index.html .datahash build_daily_data.py build_dashboard.py link_days.py
+          git add index.html .datahash build_daily_data.py build_dashboard.py
           git commit -m "Auto-refresh dashboard $(date -u +%Y-%m-%dT%H:%MZ)" || echo "no changes"
           git push
