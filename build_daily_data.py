@@ -127,12 +127,15 @@ def main():
 
     days = defaultdict(new_day)
     timelog = []          # [{date, project, hours}]
+    active_clients = 0    # snapshot: Projects Overview rows at Stage=Active
 
     # --- Projects Overview: jobs won attributed by Lead Source + id->name map ---
     proj_name = {}        # dashless page id -> client name (for time-log join)
     for pg in notion_pages(ntoken, PROJECTS_DS):
         p = pg["properties"]
         proj_name[pg["id"].replace("-", "")] = prop(p.get("Client")) or "Untitled"
+        if prop(p.get("Stage")) == "Active":
+            active_clients += 1
         # Proposals were MERGED into the Pipeline (2026-07-02): a row with a Proposal Status is a proposal.
         ps = prop(p.get("Proposal Status"))
         if ps:
@@ -230,8 +233,23 @@ def main():
         b["replies"] += int(row.get("unique_replies") or 0)
         b["positive"] += int(row.get("unique_opportunities") or 0)
 
+    # Build-time AUD->USD rate — a FALLBACK only; the dashboard fetches a live rate
+    # client-side on every load. Non-critical, so never fail the build on a miss.
+    fx_aud_usd = None
+    for fx_url in ("https://open.er-api.com/v6/latest/AUD",
+                   "https://api.frankfurter.app/latest?from=AUD&to=USD"):
+        try:
+            with urllib.request.urlopen(fx_url, timeout=8) as fh:
+                fx_aud_usd = (json.load(fh).get("rates") or {}).get("USD")
+            if fx_aud_usd:
+                break
+        except Exception:
+            continue
+
     out = {"generated": today,
            "source": "Notion (Upwork/Proposals/Projects/Time Log) + Instantly daily analytics",
+           "active_clients": active_clients,
+           "fx_aud_usd": fx_aud_usd,
            "days": [dict(date=d, **days[d]) for d in sorted(days)],
            "timelog": sorted(timelog, key=lambda x: x["date"])}
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

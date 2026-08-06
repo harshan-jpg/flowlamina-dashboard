@@ -167,6 +167,7 @@ TEMPLATE = r"""<!doctype html>
 <script>
 const DATA = __DATA_JSON__;
 const DAYS = DATA.days, TL = DATA.timelog || [];
+let FX_AUD_USD = DATA.fx_aud_usd || null;   // AUD->USD; build-time fallback, refreshed live on load
 const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 const fmt = (n,d=0) => (n===null||n===undefined||isNaN(n)) ? "—"
   : Number(n).toLocaleString(undefined,{maximumFractionDigits:d});
@@ -194,6 +195,8 @@ function withRatios(o){
   o.rev_plus_pay = (o.revenue||0)+(o.drawings||0);        // "take-home": revenue + owner's drawings (non-business-expense money)
   o.hourly_rate  = o.worked ? ((o.revenue||0)+(o.drawings||0))/o.worked : 0;  // (revenue + owner's pay) / hours worked
   o.yt_prod_time = o.youtube_videos ? (o.youtube_hours||0)/o.youtube_videos : 0;  // avg hours to produce one video
+  o.active_clients = (DATA.active_clients!=null) ? DATA.active_clients : 0;        // live snapshot, period-independent
+  o.rev_plus_pay_usd = (FX_AUD_USD!=null) ? o.rev_plus_pay*FX_AUD_USD : null;       // AUD figure at the live FX rate
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -266,7 +269,7 @@ function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=la
   c.data.datasets[2].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
 
 // ---- KPI cards ----
-const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0},{lab:'YouTube videos',k:'youtube_videos',d:0},{lab:'Avg video production time',k:'yt_prod_time',d:1,suf:' h/video'}];
+const KPI_TOT=[{lab:'Active clients',k:'active_clients',d:0},{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0},{lab:'YouTube videos',k:'youtube_videos',d:0},{lab:'Avg video production time',k:'yt_prod_time',d:1,suf:' h/video'}];
 const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'Viewed',k:'viewed',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
   {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Job won rate',k:'uw_won_rate',d:1,suf:'%'},
@@ -275,7 +278,7 @@ const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (AUD)",k:'rev_plus_pay',d:0,pre:'A$'},{lab:'Hourly rate (rev+pay/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
+const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (AUD)",k:'rev_plus_pay',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (USD)",k:'rev_plus_pay_usd',d:0,pre:'US$'},{lab:'Hourly rate (rev+pay/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){
@@ -284,8 +287,9 @@ function renderCards(elId,kpis,cur,prev){
     if(prev && prev[k.k]!==undefined){ const diff=v-prev[k.k];
       if(Math.abs(diff)>(k.suf==='%'?0.05:0.5))
         delta=`<div class="delta ${diff>0?'up':'down'}">${diff>0?'▲':'▼'} ${fmt(Math.abs(diff),k.d)}${k.suf||''} vs prev</div>`; }
+    const disp=(v==null||Number.isNaN(v))?'—':`${(k.pre||'')}${fmt(v,k.d)}${(k.suf||'')}`;
     el.insertAdjacentHTML('beforeend',
-      `<div class="card"><div class="lab">${k.lab}</div><div class="val">${(k.pre||'')}${fmt(v,k.d)}${(k.suf||'')}</div>${delta}</div>`);
+      `<div class="card"><div class="lab">${k.lab}</div><div class="val">${disp}</div>${delta}</div>`);
   });
 }
 
@@ -363,6 +367,20 @@ document.getElementById('presets').addEventListener('click',e=>{ const p=e.targe
   else setRange(shiftISO(MAX,-(+p-1)),MAX); });
 
 render();
+
+// Live AUD->USD rate: fetch on every page load (so the Refresh button = a fresh rate),
+// then re-render so the USD tile reflects the current market rate. Falls back to the
+// build-time rate (DATA.fx_aud_usd) if these fail, and to "—" if there is none.
+(function(){
+  const SRCS=['https://open.er-api.com/v6/latest/AUD','https://api.frankfurter.app/latest?from=AUD&to=USD'];
+  (function tryFx(i){
+    if(i>=SRCS.length) return;
+    fetch(SRCS[i]).then(r=>r.json()).then(j=>{
+      const x=(j&&j.rates&&j.rates.USD)?j.rates.USD:null;
+      if(x){ FX_AUD_USD=x; render(); } else tryFx(i+1);
+    }).catch(()=>tryFx(i+1));
+  })(0);
+})();
 </script>
 </body>
 </html>
