@@ -116,7 +116,7 @@ def new_day():
                 proposals_drafted=0, proposals_signed=0, value_signed=0.0,
                 won_upwork=0, won_coldemail=0, won_other=0, sales_calls=0, hours=0.0, worked=0.0,
                 emails=0, new_leads=0, replies=0, positive=0,
-                revenue=0.0, expenses=0.0, drawings=0.0, youtube_videos=0)
+                revenue=0.0, expenses=0.0, drawings=0.0, youtube_videos=0, youtube_hours=0.0)
 
 
 def main():
@@ -170,6 +170,8 @@ def main():
         name = proj_name.get(rel[0]["id"].replace("-", ""), "Unattributed") if rel else "Unattributed"
         if hrs:
             timelog.append({"date": d, "project": name, "hours": hrs})
+            if "youtube" in name.lower():   # hours attributed to the YouTube project (for avg production time)
+                days[d]["youtube_hours"] += hrs
 
     # --- Upwork applications ---
     for pg in notion_pages(ntoken, UPWORK_DS):

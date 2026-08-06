@@ -183,7 +183,7 @@ function mondayOf(iso){ const [y,m,d]=iso.split('-').map(Number); const dt=new D
 function bucketKey(iso){ return state.gran==='day'?iso : state.gran==='week'?mondayOf(iso) : iso.slice(0,7); }
 const SUM_FIELDS = ['applications','viewed','connects','connect_cost','proposals_drafted','proposals_signed',
   'value_signed','won_upwork','won_coldemail','won_other','sales_calls','hours','worked','uw_replies','emails','new_leads','replies','positive',
-  'revenue','expenses','drawings','youtube_videos'];
+  'revenue','expenses','drawings','youtube_videos','youtube_hours'];
 function withRatios(o){
   o.view_rate  = o.applications ? o.viewed*100/o.applications : 0;
   o.uw_reply_rate = o.applications ? o.uw_replies*100/o.applications : 0;
@@ -193,6 +193,7 @@ function withRatios(o){
   o.uw_won_rate = o.applications ? (o.won_upwork||0)*100/o.applications : 0;  // jobs won / applications
   o.rev_plus_pay = (o.revenue||0)+(o.drawings||0);        // "take-home": revenue + owner's drawings (non-business-expense money)
   o.hourly_rate  = o.worked ? ((o.revenue||0)+(o.drawings||0))/o.worked : 0;  // (revenue + owner's pay) / hours worked
+  o.yt_prod_time = o.youtube_videos ? (o.youtube_hours||0)/o.youtube_videos : 0;  // avg hours to produce one video
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -265,7 +266,7 @@ function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=la
   c.data.datasets[2].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
 
 // ---- KPI cards ----
-const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0},{lab:'YouTube videos',k:'youtube_videos',d:0}];
+const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0},{lab:'YouTube videos',k:'youtube_videos',d:0},{lab:'Avg video production time',k:'yt_prod_time',d:1,suf:' h/video'}];
 const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'Viewed',k:'viewed',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
   {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Job won rate',k:'uw_won_rate',d:1,suf:'%'},
