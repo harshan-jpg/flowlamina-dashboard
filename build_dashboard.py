@@ -190,6 +190,9 @@ function withRatios(o){
   o.reply_rate = o.emails ? o.replies*100/o.emails : 0;
   o.total_won  = (o.won_upwork||0)+(o.won_coldemail||0)+(o.won_other||0);
   o.net        = (o.revenue||0)-(o.expenses||0);
+  o.uw_won_rate = o.applications ? (o.won_upwork||0)*100/o.applications : 0;  // jobs won / applications
+  o.rev_plus_pay = (o.revenue||0)+(o.drawings||0);        // "take-home": revenue + owner's drawings (non-business-expense money)
+  o.hourly_rate  = o.worked ? ((o.revenue||0)+(o.drawings||0))/o.worked : 0;  // (revenue + owner's pay) / hours worked
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -231,6 +234,7 @@ mkBar('c_wono','--other'); mkBar('c_calls','--view'); mkBar('c_hours','--hours')
 charts['c_finance']=new Chart(document.getElementById('c_finance'),{type:'bar',
   data:{labels:[],datasets:[
     {label:'Revenue',data:[],backgroundColor:css('--won'),borderRadius:4,maxBarThickness:40},
+    {label:"Revenue + Owner's pay",data:[],backgroundColor:css('--up'),borderRadius:4,maxBarThickness:40},
     {label:'Expenses',data:[],backgroundColor:css('--reply'),borderRadius:4,maxBarThickness:40}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,padding:12}}},
     scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:css('--line')}}}}});
@@ -256,18 +260,21 @@ function paintStack(labels,arr){ const c=charts['c_wonstack']; c.data.labels=lab
   c.data.datasets[0].data=arr.map(b=>b.won_upwork); c.data.datasets[1].data=arr.map(b=>b.won_coldemail);
   c.data.datasets[2].data=arr.map(b=>b.won_other); c.update(); }
 function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=labels;
-  c.data.datasets[0].data=arr.map(b=>Math.round(b.revenue)); c.data.datasets[1].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
+  c.data.datasets[0].data=arr.map(b=>Math.round(b.revenue));
+  c.data.datasets[1].data=arr.map(b=>Math.round((b.revenue||0)+(b.drawings||0)));
+  c.data.datasets[2].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
 
 // ---- KPI cards ----
 const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0}];
 const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'Viewed',k:'viewed',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
-  {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Connects spent',k:'connects',d:0},{lab:'Connect cost (USD)',k:'connect_cost',d:0,pre:'US$'}];
+  {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Job won rate',k:'uw_won_rate',d:1,suf:'%'},
+  {lab:'Connects spent',k:'connects',d:0},{lab:'Connect cost (USD)',k:'connect_cost',d:0,pre:'US$'}];
 const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate',d:2,suf:'%'},
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'}];
+const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (AUD)",k:'rev_plus_pay',d:0,pre:'A$'},{lab:'Hourly rate (rev+pay/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){
