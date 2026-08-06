@@ -116,7 +116,7 @@ def new_day():
                 proposals_drafted=0, proposals_signed=0, value_signed=0.0,
                 won_upwork=0, won_coldemail=0, won_other=0, sales_calls=0, hours=0.0, worked=0.0,
                 emails=0, new_leads=0, replies=0, positive=0,
-                revenue=0.0, expenses=0.0)
+                revenue=0.0, expenses=0.0, drawings=0.0)
 
 
 def main():
@@ -209,6 +209,10 @@ def main():
                 b["revenue"] += val
             if prop(p.get("Direction")) == "Expense":
                 b["expenses"] += abs(val)
+            # Owner's drawings (money Harshan pays himself) are Direction=Transfer, so they
+            # sit OUTSIDE revenue/expenses above. Tracked separately for the Owner's Pay KPI.
+            if prop(p.get("Category")) == "Owner's Drawings":
+                b["drawings"] += abs(val)
 
     # --- Instantly (aggregated per day; summed defensively) ---
     today = date.today().isoformat()

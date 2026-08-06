@@ -183,7 +183,7 @@ function mondayOf(iso){ const [y,m,d]=iso.split('-').map(Number); const dt=new D
 function bucketKey(iso){ return state.gran==='day'?iso : state.gran==='week'?mondayOf(iso) : iso.slice(0,7); }
 const SUM_FIELDS = ['applications','viewed','connects','connect_cost','proposals_drafted','proposals_signed',
   'value_signed','won_upwork','won_coldemail','won_other','sales_calls','hours','worked','uw_replies','emails','new_leads','replies','positive',
-  'revenue','expenses'];
+  'revenue','expenses','drawings'];
 function withRatios(o){
   o.view_rate  = o.applications ? o.viewed*100/o.applications : 0;
   o.uw_reply_rate = o.applications ? o.uw_replies*100/o.applications : 0;
@@ -267,7 +267,7 @@ const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'}];
+const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){
@@ -289,7 +289,7 @@ const GROUPS=[
   {label:'Cold email', cls:'grp-ce', cols:[['Won','won_coldemail'],['Emails','emails'],['Reply %','reply_rate'],
     ['Positive','positive']]},
   {label:'Other', cls:'grp-ot', cols:[['Won','won_other'],['Calls','sales_calls']]},
-  {label:'Finance', cls:'grp-fin', cols:[['Rev A$','revenue'],['Exp A$','expenses']]},
+  {label:'Finance', cls:'grp-fin', cols:[['Rev A$','revenue'],['Exp A$','expenses'],["Own pay A$",'drawings']]},
   {label:'', cols:[['Hours Logged','hours'],['Hours Worked','worked']]},
 ];
 const FLAT=GROUPS.flatMap(g=>g.cols);
