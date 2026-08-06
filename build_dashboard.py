@@ -183,7 +183,7 @@ function mondayOf(iso){ const [y,m,d]=iso.split('-').map(Number); const dt=new D
 function bucketKey(iso){ return state.gran==='day'?iso : state.gran==='week'?mondayOf(iso) : iso.slice(0,7); }
 const SUM_FIELDS = ['applications','viewed','connects','connect_cost','proposals_drafted','proposals_signed',
   'value_signed','won_upwork','won_coldemail','won_other','sales_calls','hours','worked','uw_replies','emails','new_leads','replies','positive',
-  'revenue','expenses','drawings'];
+  'revenue','expenses','drawings','youtube_videos'];
 function withRatios(o){
   o.view_rate  = o.applications ? o.viewed*100/o.applications : 0;
   o.uw_reply_rate = o.applications ? o.uw_replies*100/o.applications : 0;
@@ -265,7 +265,7 @@ function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=la
   c.data.datasets[2].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
 
 // ---- KPI cards ----
-const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0}];
+const KPI_TOT=[{lab:'Total jobs won',k:'total_won',d:0},{lab:'Total sales calls',k:'sales_calls',d:0},{lab:'YouTube videos',k:'youtube_videos',d:0}];
 const KPI_UP=[{lab:'Applications',k:'applications',d:0},{lab:'Viewed',k:'viewed',d:0},{lab:'View rate',k:'view_rate',d:1,suf:'%'},
   {lab:'Replies',k:'uw_replies',d:0},{lab:'Reply rate',k:'uw_reply_rate',d:1,suf:'%'},
   {lab:'Jobs won',k:'won_upwork',d:0},{lab:'Job won rate',k:'uw_won_rate',d:1,suf:'%'},
