@@ -39,7 +39,6 @@ TEMPLATE = r"""<!doctype html>
     --bg:#0f1220; --panel:#181c2e; --panel2:#1f2440; --ink:#eceefb; --muted:#9aa2c7;
     --line:#2b3157; --up:#f0932b; --view:#4a90e2; --won:#27ae60; --apps:#4a90e2;
     --mail:#8e5cf7; --reply:#e74c6a; --hours:#7f8bb5; --proj:#16a3b8; --other:#e0729e;
-    --donation:#e8a13a;
     --tot:#eceefb; --good:#27ae60; --bad:#e74c6a;
   }
   *{box-sizing:border-box}
@@ -53,7 +52,7 @@ TEMPLATE = r"""<!doctype html>
   h2{font-size:15px;text-transform:uppercase;letter-spacing:.12em;margin:34px 0 12px;font-weight:700;
     padding-bottom:7px;border-bottom:2px solid var(--line)}
   h2.tot{color:var(--tot)} h2.up{color:var(--up)} h2.ce{color:var(--mail)}
-  h2.ot{color:var(--other)} h2.dl{color:var(--proj)} h2.fin{color:#3ecf8e} h2.don{color:#e8a13a}
+  h2.ot{color:var(--other)} h2.dl{color:var(--proj)} h2.fin{color:#3ecf8e}
   .controls{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-top:16px}
   .controls label{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
@@ -152,18 +151,11 @@ TEMPLATE = r"""<!doctype html>
     <div class="chart"><h3>Hours worked over time</h3><div class="cv"><canvas id="c_worked"></canvas></div></div>
   </div>
 
-  <h2 class="fin">Finance (business) — AUD</h2>
-  <div class="sub" style="margin:-6px 0 10px">All figures are AUD (from your business bank statements). The only USD figure on this dashboard is Upwork <b>Connect cost</b> (US$0.15/connect).</div>
+  <h2 class="fin">Finance (business)</h2>
+  <div class="sub" style="margin:-6px 0 10px">AUD from your business bank statements, except tiles marked USD (converted at the live rate). Upwork <b>Connect cost</b> is US$0.15/connect. Donations are charitable gifts, tracked separately from business expenses (like owner's savings).</div>
   <div class="cards" id="cards_fin"></div>
   <div class="grid">
     <div class="chart" style="grid-column:1/-1"><h3>Revenue vs Expenses</h3><div class="cv"><canvas id="c_finance"></canvas></div></div>
-  </div>
-
-  <h2 class="don">Donations</h2>
-  <div class="sub" style="margin:-6px 0 10px">Charitable giving, tracked separately from business expenses (like owner's savings). The combined tile is <b>Revenue + Owner's savings + Donations</b>, shown in AUD and at the live USD rate.</div>
-  <div class="cards" id="cards_don"></div>
-  <div class="grid">
-    <div class="chart" style="grid-column:1/-1"><h3>Donations over time (AUD)</h3><div class="cv"><canvas id="c_donations"></canvas></div></div>
   </div>
 
   <h2>Breakdown by <span id="granword">month</span></h2>
@@ -245,7 +237,6 @@ function mkLine(id,color){ charts[id]=new Chart(document.getElementById(id),{typ
 mkBar('c_apps','--apps'); mkBar('c_connects','--up'); mkLine('c_view','--view'); mkBar('c_won','--won');
 mkBar('c_emails','--mail'); mkLine('c_reply','--reply'); mkBar('c_pos','--won'); mkBar('c_wonce','--mail');
 mkBar('c_wono','--other'); mkBar('c_calls','--view'); mkBar('c_hours','--hours'); mkBar('c_worked','--proj');
-mkBar('c_donations','--donation');
 // Revenue vs Expenses — grouped bars in one chart
 charts['c_finance']=new Chart(document.getElementById('c_finance'),{type:'bar',
   data:{labels:[],datasets:[
@@ -269,7 +260,7 @@ charts['c_hproj']=new Chart(document.getElementById('c_hproj'),{type:'bar',
     scales:{x:{beginAtZero:true,grid:{color:css('--line')}},y:{grid:{display:false}}}}});
 const CHART_FIELD={c_apps:'applications',c_connects:'connects',c_view:'view_rate',c_won:'won_upwork',
   c_emails:'emails',c_reply:'reply_rate',c_pos:'positive',c_wonce:'won_coldemail',
-  c_wono:'won_other',c_calls:'sales_calls',c_hours:'hours',c_worked:'worked',c_donations:'donations'};
+  c_wono:'won_other',c_calls:'sales_calls',c_hours:'hours',c_worked:'worked'};
 function paint(id,labels,arr){ const c=charts[id];
   c.data.labels=labels; c.data.datasets[0].data=arr.map(b=>Math.round(b[CHART_FIELD[id]]*100)/100); c.update(); }
 function paintStack(labels,arr){ const c=charts['c_wonstack']; c.data.labels=labels;
@@ -290,8 +281,7 @@ const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (AUD)",k:'rev_plus_pay',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (USD)",k:'rev_plus_pay_usd',d:0,pre:'US$'},{lab:'Hourly rate (rev+pay/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
-const KPI_DON=[{lab:'Donations (AUD)',k:'donations',d:2,pre:'A$'},{lab:'Donations (USD)',k:'donations_usd',d:2,pre:'US$'},{lab:"Revenue + Owner's savings + Donations (AUD)",k:'rev_pay_don',d:2,pre:'A$'},{lab:"Revenue + Owner's savings + Donations (USD)",k:'rev_pay_don_usd',d:2,pre:'US$'}];
+const KPI_FIN=[{lab:'Revenue (AUD)',k:'revenue',d:0,pre:'A$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (AUD)",k:'rev_plus_pay',d:0,pre:'A$'},{lab:"Revenue + Owner's pay (USD)",k:'rev_plus_pay_usd',d:0,pre:'US$'},{lab:'Donations (AUD)',k:'donations',d:2,pre:'A$'},{lab:'Donations (USD)',k:'donations_usd',d:2,pre:'US$'},{lab:"Revenue + Owner's savings + Donations (AUD)",k:'rev_pay_don',d:2,pre:'A$'},{lab:"Revenue + Owner's savings + Donations (USD)",k:'rev_pay_don_usd',d:2,pre:'US$'},{lab:'Hourly rate (rev+pay/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){
@@ -344,7 +334,7 @@ function render(){
   if(state.from>state.to){ const s=state.from; state.from=state.to; state.to=s;
     document.getElementById('from').value=state.from; document.getElementById('to').value=state.to; }
   const arr=aggregate(state.from,state.to), labels=arr.map(b=>labelFor(b.key));
-  ['c_apps','c_connects','c_view','c_won','c_emails','c_reply','c_pos','c_wonce','c_wono','c_calls','c_hours','c_worked','c_donations']
+  ['c_apps','c_connects','c_view','c_won','c_emails','c_reply','c_pos','c_wonce','c_wono','c_calls','c_hours','c_worked']
     .forEach(id=>paint(id,labels,arr));
   paintStack(labels,arr); paintFinance(labels,arr);
   const hp=hoursByProject(state.from,state.to);
@@ -355,7 +345,7 @@ function render(){
   const cur=totals(arr);
   renderCards('cards_tot',KPI_TOT,cur,prev); renderCards('cards_up',KPI_UP,cur,prev);
   renderCards('cards_ce',KPI_CE,cur,prev); renderCards('cards_ot',KPI_OT,cur,prev); renderCards('cards_dl',KPI_DL,cur,prev);
-  renderCards('cards_fin',KPI_FIN,cur,prev); renderCards('cards_don',KPI_DON,cur,prev);
+  renderCards('cards_fin',KPI_FIN,cur,prev);
   renderTable(arr);
   document.getElementById('granword').textContent=state.gran;
   document.getElementById('rangelabel').textContent=
