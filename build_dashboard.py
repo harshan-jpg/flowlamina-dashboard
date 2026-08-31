@@ -152,7 +152,7 @@ TEMPLATE = r"""<!doctype html>
   </div>
 
   <h2 class="fin">Finance (business)</h2>
-  <div class="sub" style="margin:-6px 0 10px">AUD from your business bank statements, except tiles marked USD (converted at the live rate). Upwork <b>Connect cost</b> is US$0.15/connect. Donations are charitable gifts, tracked separately from business expenses (like owner's savings).</div>
+  <div class="sub" style="margin:-6px 0 10px">AUD from your business bank statements, except tiles marked USD (converted at the live rate). <b>Revenue</b> is every dollar coming into the business account; <b>Net</b> is revenue minus business expenses. Owner's drawings and donations are money moving out, so neither counts as revenue or as a business expense. <b>Hourly rate</b> = revenue ÷ hours worked; <b>Return on spend</b> = revenue ÷ business expenses. Upwork <b>Connect cost</b> is US$0.15/connect.</div>
   <div class="cards" id="cards_fin"></div>
   <div class="grid">
     <div class="chart" style="grid-column:1/-1"><h3>Revenue vs Expenses</h3><div class="cv"><canvas id="c_finance"></canvas></div></div>
@@ -190,13 +190,19 @@ function withRatios(o){
   o.uw_reply_rate = o.applications ? o.uw_replies*100/o.applications : 0;
   o.reply_rate = o.emails ? o.replies*100/o.emails : 0;
   o.total_won  = (o.won_upwork||0)+(o.won_coldemail||0)+(o.won_other||0);
-  o.rev_pay_don = (o.revenue||0)+(o.drawings||0)+(o.donations||0);  // revenue + owner's savings + donations (AUD)
-  o.net        = o.rev_pay_don-(o.expenses||0);           // (revenue + owner's pay + donations) − expenses
+  // Finance tiles rebuilt 2026-08-31: revenue stands ALONE (every incoming dollar).
+  // Owner's drawings + donations are money moving OUT to Harshan / to charity — adding
+  // them to revenue overstated it badly, which is what he caught on the dashboard.
+  o.net        = (o.revenue||0)-(o.expenses||0);          // revenue − business expenses
   o.uw_won_rate = o.applications ? (o.won_upwork||0)*100/o.applications : 0;  // jobs won / applications
-  o.hourly_rate  = o.worked ? o.rev_pay_don/o.worked : 0;  // (revenue + owner's pay + donations) / hours worked
+  o.hourly_rate  = o.worked ? (o.revenue||0)/o.worked : 0;      // A$/hr actually earned per hour worked
+  o.return_on_spend = o.expenses ? (o.revenue||0)/o.expenses : 0;  // revenue per $1 of expense (a multiple, no units)
   o.yt_prod_time = o.youtube_videos ? (o.youtube_hours||0)/o.youtube_videos : 0;  // avg hours to produce one video
   o.active_clients = (DATA.active_clients!=null) ? DATA.active_clients : 0;        // live snapshot, period-independent
-  o.rev_pay_don_usd = (FX_AUD_USD!=null) ? o.rev_pay_don*FX_AUD_USD : null;         // same, at the live FX rate
+  // USD twins, at the live FX rate (null when no rate could be fetched -> tile shows "—")
+  o.revenue_usd  = (FX_AUD_USD!=null) ? (o.revenue||0)*FX_AUD_USD  : null;
+  o.expenses_usd = (FX_AUD_USD!=null) ? (o.expenses||0)*FX_AUD_USD : null;
+  o.net_usd      = (FX_AUD_USD!=null) ? o.net*FX_AUD_USD           : null;
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -237,7 +243,7 @@ mkBar('c_wono','--other'); mkBar('c_calls','--view'); mkBar('c_hours','--hours')
 // Revenue vs Expenses — grouped bars in one chart
 charts['c_finance']=new Chart(document.getElementById('c_finance'),{type:'bar',
   data:{labels:[],datasets:[
-    {label:"Revenue + Owner's savings + Donations",data:[],backgroundColor:css('--won'),borderRadius:4,maxBarThickness:40},
+    {label:"Revenue",data:[],backgroundColor:css('--won'),borderRadius:4,maxBarThickness:40},
     {label:'Expenses',data:[],backgroundColor:css('--reply'),borderRadius:4,maxBarThickness:40}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,padding:12}}},
     scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:css('--line')}}}}});
@@ -263,7 +269,7 @@ function paintStack(labels,arr){ const c=charts['c_wonstack']; c.data.labels=lab
   c.data.datasets[0].data=arr.map(b=>b.won_upwork); c.data.datasets[1].data=arr.map(b=>b.won_coldemail);
   c.data.datasets[2].data=arr.map(b=>b.won_other); c.update(); }
 function paintFinance(labels,arr){ const c=charts['c_finance']; c.data.labels=labels;
-  c.data.datasets[0].data=arr.map(b=>Math.round(b.rev_pay_don||0));
+  c.data.datasets[0].data=arr.map(b=>Math.round(b.revenue||0));
   c.data.datasets[1].data=arr.map(b=>Math.round(b.expenses)); c.update(); }
 
 // ---- KPI cards ----
@@ -276,7 +282,16 @@ const KPI_CE=[{lab:'Emails sent',k:'emails',d:0},{lab:'Reply rate',k:'reply_rate
   {lab:'Positive replies',k:'positive',d:0},{lab:'Jobs won',k:'won_coldemail',d:0}];
 const KPI_OT=[{lab:'Jobs won',k:'won_other',d:0}];
 const KPI_DL=[{lab:'Hours logged (projects)',k:'hours',d:1},{lab:'Hours worked (total)',k:'worked',d:1}];
-const KPI_FIN=[{lab:"Revenue + Owner's savings + Donations (AUD)",k:'rev_pay_don',d:2,pre:'A$'},{lab:"Revenue + Owner's savings + Donations (USD)",k:'rev_pay_don_usd',d:2,pre:'US$'},{lab:'Expenses (AUD)',k:'expenses',d:0,pre:'A$'},{lab:"Owner's pay (AUD)",k:'drawings',d:0,pre:'A$'},{lab:'Donations (AUD)',k:'donations',d:2,pre:'A$'},{lab:'Net (AUD)',k:'net',d:0,pre:'A$'},{lab:'Hourly rate (rev+pay+don/hr)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'}];
+const KPI_FIN=[
+  {lab:'Revenue (AUD)',k:'revenue',d:2,pre:'A$'},
+  {lab:'Revenue (USD)',k:'revenue_usd',d:2,pre:'US$'},
+  {lab:'Business expenses (AUD)',k:'expenses',d:2,pre:'A$'},
+  {lab:'Business expenses (USD)',k:'expenses_usd',d:2,pre:'US$'},
+  {lab:'Donations (AUD)',k:'donations',d:2,pre:'A$'},
+  {lab:'Net (AUD)',k:'net',d:2,pre:'A$'},
+  {lab:'Net (USD)',k:'net_usd',d:2,pre:'US$'},
+  {lab:'Hourly rate',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'},
+  {lab:'Return on spend',k:'return_on_spend',d:2,suf:'x'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function renderCards(elId,kpis,cur,prev){

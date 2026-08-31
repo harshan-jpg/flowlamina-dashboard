@@ -197,7 +197,7 @@ def main():
     # (Daily Tracker was RETIRED 2026-07-08 — sales_calls + hours now come from the Time Log loop above,
     #  the single CRM input DB. Day metrics live on the "📊 Daily totals" rows.)
 
-    # --- Business Finance: revenue (Category=Revenue, excl inter-biz) + expenses (Direction=Expense) per day ---
+    # --- Business Finance: revenue (ALL incoming) + expenses (Direction=Expense) per day ---
     # DB id (not a secret); env var override for CI, else .env, else the known id.
     FINANCE_DS = (os.environ.get("NOTION_FINANCE_DS") or env.get("notion_finance_transactions_ds_id")
                   or "35a08da8-1c36-8015-a165-000b51d3862e")
@@ -211,7 +211,12 @@ def main():
                 continue
             b = days[d[:10]]
             val = prop(p.get("Value")) or 0
-            if prop(p.get("Category")) == "Revenue":
+            # Revenue = EVERY incoming dollar (Direction=Income), not just Category=Revenue.
+            # Harshan's definition, confirmed 2026-08-31 against his own Aug figure of
+            # A$3,007.50: client revenue A$2,636.50 + inter-biz transfers in A$371.00.
+            # Owner's drawings and donations are Direction=Transfer, so they are NOT
+            # income and never inflate this — that double-count was the old bug.
+            if prop(p.get("Direction")) == "Income":
                 b["revenue"] += val
             if prop(p.get("Direction")) == "Expense":
                 b["expenses"] += abs(val)
