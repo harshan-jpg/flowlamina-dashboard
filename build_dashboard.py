@@ -204,6 +204,7 @@ function withRatios(o){
   o.expenses_usd  = (FX_AUD_USD!=null) ? (o.expenses||0)*FX_AUD_USD  : null;
   o.donations_usd = (FX_AUD_USD!=null) ? (o.donations||0)*FX_AUD_USD : null;
   o.net_usd       = (FX_AUD_USD!=null) ? o.net*FX_AUD_USD            : null;
+  o.hourly_rate_usd = (FX_AUD_USD!=null) ? o.hourly_rate*FX_AUD_USD  : null;
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -292,7 +293,8 @@ const KPI_FIN=[
   {lab:'Donations (USD)',k:'donations_usd',d:2,pre:'US$'},
   {lab:'Net (AUD)',k:'net',d:2,pre:'A$'},
   {lab:'Net (USD)',k:'net_usd',d:2,pre:'US$'},
-  {lab:'Hourly rate',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'},
+  {lab:'Hourly rate (AUD)',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'},
+  {lab:'Hourly rate (USD)',k:'hourly_rate_usd',d:2,pre:'US$',suf:'/hr'},
   {lab:'Return on spend',k:'return_on_spend',d:2,suf:'x'}];
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
 function shiftISO(iso,n){ const d=new Date(iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
