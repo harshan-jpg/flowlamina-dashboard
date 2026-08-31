@@ -200,9 +200,10 @@ function withRatios(o){
   o.yt_prod_time = o.youtube_videos ? (o.youtube_hours||0)/o.youtube_videos : 0;  // avg hours to produce one video
   o.active_clients = (DATA.active_clients!=null) ? DATA.active_clients : 0;        // live snapshot, period-independent
   // USD twins, at the live FX rate (null when no rate could be fetched -> tile shows "—")
-  o.revenue_usd  = (FX_AUD_USD!=null) ? (o.revenue||0)*FX_AUD_USD  : null;
-  o.expenses_usd = (FX_AUD_USD!=null) ? (o.expenses||0)*FX_AUD_USD : null;
-  o.net_usd      = (FX_AUD_USD!=null) ? o.net*FX_AUD_USD           : null;
+  o.revenue_usd   = (FX_AUD_USD!=null) ? (o.revenue||0)*FX_AUD_USD   : null;
+  o.expenses_usd  = (FX_AUD_USD!=null) ? (o.expenses||0)*FX_AUD_USD  : null;
+  o.donations_usd = (FX_AUD_USD!=null) ? (o.donations||0)*FX_AUD_USD : null;
+  o.net_usd       = (FX_AUD_USD!=null) ? o.net*FX_AUD_USD            : null;
   return o;
 }
 function aggregate(fromISO,toISO){
@@ -288,6 +289,7 @@ const KPI_FIN=[
   {lab:'Business expenses (AUD)',k:'expenses',d:2,pre:'A$'},
   {lab:'Business expenses (USD)',k:'expenses_usd',d:2,pre:'US$'},
   {lab:'Donations (AUD)',k:'donations',d:2,pre:'A$'},
+  {lab:'Donations (USD)',k:'donations_usd',d:2,pre:'US$'},
   {lab:'Net (AUD)',k:'net',d:2,pre:'A$'},
   {lab:'Net (USD)',k:'net_usd',d:2,pre:'US$'},
   {lab:'Hourly rate',k:'hourly_rate',d:2,pre:'A$',suf:'/hr'},
